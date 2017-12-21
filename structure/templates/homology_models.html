@@ -75,20 +75,13 @@
                 table.draw();
             });
             $('#download_btn').click(function () {
-                ClearSelection('targets');
-                var checked_data = table.rows('.alt_selected').data();
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][9];
-                    var state = checked_data[i][3];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model_'.concat(state),  div.innerText.replace(/\s+/g, '') );
-                    } else {
-                        AddToSelection('targets', 'structure_model_'.concat(state), div.textContent.replace(/\s+/g, ''));
-                    }
-                }
+                var selected_ids = [];
+                 $.each($(".alt_selected"), function(){            
+                    hom_id = $(this).closest('tr').attr('model_id');
+                    selected_ids.push(hom_id);
+                });
                 
-                window.location.href = '/structure/hommod_download';
+                window.location.href = '/structure/hommod_download?ids='+selected_ids.join(",");
 
             });
             $('#align_btn').click(function () {
@@ -126,17 +119,19 @@
 
                 }
                 var checked_data = table.rows('.alt_selected').data();
+                var selected_ids = [];
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][9];
                     var state2 = checked_data[i][3];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model_'.concat(state2), div.innerText.replace(/\s+/g, ''));
+                        selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
                     } else {
-                        AddToSelection('targets', 'structure_model_'.concat(state2), div.textContent.replace(/\s+/g, ''));
+                        selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
                     }
 
                 }
+                AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
                 window.location.href = '/structure/superposition_workflow_index';
             });
 
@@ -210,7 +205,7 @@
             </thead>
             <tbody>
             {% for model in structure_model %}
-                <tr>
+                <tr model_id='{{model.pk}}'>
                     <td><input class="alt" type="checkbox"></td>
                     <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
                     <td>{{ model.protein.family.parent.name|safe }}</td>

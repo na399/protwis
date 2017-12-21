@@ -44,6 +44,10 @@ class Protein(models.Model):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self))
 
+    def get_helical_box_no_buttons(self):
+        residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
+        return DrawHelixBox(residuelist,self.get_protein_class(),str(self), nobuttons=1)
+        
     def get_snake_plot_no_buttons(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1)
@@ -61,7 +65,6 @@ class Protein(models.Model):
         while tmp.parent.parent.parent is not None:
             tmp = tmp.parent
         return tmp.name
-
 
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
@@ -84,11 +87,11 @@ class ProteinConformation(models.Model):
 
     @property
     def is_sodium(self):
-        sodium = IdentifiedSites.objects.filter(protein_conformation=self, site__slug='sodium_pocket')
-        if len(sodium)>0:
-            return True
-        else:
-            return False
+        # Avoid filter, to utilise if site_protein_conformation is prefetched, otherwise it generates a DB call
+        for s in self.site_protein_conformation.all():
+            if s.site.slug=='sodium_pocket':
+                return True
+        return False
 
     def sodium_pocket(self):
         try:
@@ -97,7 +100,8 @@ class ProteinConformation(models.Model):
             site = Site.objects.create(slug='sodium_pocket', name='Sodium ion pocket')
         try:
             ex_site = IdentifiedSites.objects.get(protein_conformation=self)
-            if len(ex_site.residues.all())==2:
+
+            if len(ex_site.residues.all())==2 and ex_site.site==site:
                 return
             else:
                 raise Exception
