@@ -163,7 +163,8 @@ def InteractionData(request):
 
     # Create a consensus sequence.
 
-    excluded_segment = ['C-term','N-term']
+    # excluded_segment = ['C-term','N-term']
+    excluded_segment = []
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs).all()
 
@@ -178,10 +179,18 @@ def InteractionData(request):
 
     data['gn_map'] = OrderedDict()
     data['pos_map'] = OrderedDict()
+    data['segment_map_full'] = OrderedDict()
+    data['segment_map_full_gn'] = OrderedDict()
+    data['generic_map_full'] = OrderedDict()
     for aa in consensus:
         if 'x' in aa.family_generic_number:
             data['gn_map'][aa.family_generic_number] = aa.amino_acid
-            data['pos_map'][aa.sequence_number] = aa.amino_acid
+            data['segment_map_full_gn'][aa.family_generic_number] = aa.segment_slug
+            if (not generic):
+                data['pos_map'][aa.sequence_number] = aa.amino_acid
+                data['segment_map_full'][aa.sequence_number] = aa.segment_slug
+                data['generic_map_full'][aa.sequence_number] = aa.family_generic_number
+
 
     for i in interactions:
         pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']
